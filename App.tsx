@@ -1,63 +1,87 @@
-// Copyright (c) Kaustav Ray
-
+/** @copyright Kaustav Ray */
 import React, { useState } from 'react';
-import axios from 'axios';
 
-const API_KEY = 'AIzaSyB9-KCEDBXj9V8BeBgjOgjZt_yxuGHU3sw';
-
-export default function App() {
+const App: React.FC = () => {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<{ type: 'user' | 'bot'; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const sendMessage = async () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
-    const userMessage = `You: ${input}`;
-    setMessages((prev) => [...prev, userMessage]);
+
+    const newMessages = [...messages, { type: 'user', text: input }];
+    setMessages(newMessages);
     setInput('');
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+      const res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyB9-KCEDBXj9V8BeBgjOgjZt_yxuGHU3sw',
         {
-          contents: [{ parts: [{ text: input }] }],
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          params: { key: API_KEY },
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: input }] }],
+          }),
         }
       );
 
-      const aiResponse = res.data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
-      setMessages((prev) => [...prev, `Gemini: ${aiResponse}`]);
-    } catch {
-      setMessages((prev) => [...prev, 'Gemini: Failed to fetch response.']);
-    }
+      const data = await res.json();
+      const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
 
-    setLoading(false);
+      setMessages([...newMessages, { type: 'bot', text: botReply }]);
+    } catch (err) {
+      console.error('Error:', err);
+      setMessages([...newMessages, { type: 'bot', text: 'Error occurred. Please try again.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSend();
   };
 
   return (
-    <div className="min-h-screen p-4 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-blue-100">
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-3xl font-bold mb-4 text-center">Gemini AI Chatbot</h1>
-        <div className="h-96 overflow-y-auto border rounded p-3 space-y-2 mb-4">
-          {messages.map((msg, index) => (
-            <div key={index} className={`p-2 rounded ${msg.startsWith('You') ? 'bg-blue-50 text-right' : 'bg-gray-50 text-left'}`}>{msg}</div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-center">Gemini AI Chatbot</h1>
+        <div className="bg-white bg-opacity-10 p-4 rounded-lg h-[70vh] overflow-y-auto mb-4">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`mb-3 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
+              <div className={`inline-block px-4 py-2 rounded-lg ${msg.type === 'user' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                {msg.text}
+              </div>
+            </div>
           ))}
-          {loading && <div className="italic text-gray-500">Gemini is typing...</div>}
+          {loading && (
+            <div className="text-left">
+              <div className="inline-block px-4 py-2 rounded-lg bg-gray-700 animate-pulse">Typing...</div>
+            </div>
+          )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex">
           <input
+            type="text"
+            className="flex-1 p-3 rounded-l-lg bg-gray-800 border border-gray-600 focus:outline-none"
+            placeholder="Type your message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything..."
-            className="flex-1 p-2 border rounded"
+            onKeyDown={handleKeyDown}
           />
-          <button onClick={sendMessage} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send</button>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-r-lg"
+            onClick={handleSend}
+            disabled={loading}
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default App;

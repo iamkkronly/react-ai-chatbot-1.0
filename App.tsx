@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const API_KEY = 'AIzaSyB9-KCEDBXj9V8BeBgjOgjZt_yxuGHU3sw'; // Replace with your Gemini API key
+const API_KEY = 'AIzaSyB9-KCEDBXj9V8BeBgjOgjZt_yxuGHU3sw';
 
 export default function App() {
   const [input, setInput] = useState('');
@@ -24,18 +24,14 @@ export default function App() {
           contents: [{ parts: [{ text: input }] }],
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          params: {
-            key: API_KEY,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          params: { key: API_KEY },
         }
       );
 
       const aiResponse = res.data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
       setMessages((prev) => [...prev, `Gemini: ${aiResponse}`]);
-    } catch (error) {
+    } catch {
       setMessages((prev) => [...prev, 'Gemini: Failed to fetch response.']);
     }
 
@@ -48,14 +44,7 @@ export default function App() {
         <h1 className="text-3xl font-bold mb-4 text-center">Gemini AI Chatbot</h1>
         <div className="h-96 overflow-y-auto border rounded p-3 space-y-2 mb-4">
           {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`p-2 rounded ${
-                msg.startsWith('You') ? 'bg-blue-50 text-right' : 'bg-gray-50 text-left'
-              }`}
-            >
-              {msg}
-            </div>
+            <div key={index} className={`p-2 rounded ${msg.startsWith('You') ? 'bg-blue-50 text-right' : 'bg-gray-50 text-left'}`}>{msg}</div>
           ))}
           {loading && <div className="italic text-gray-500">Gemini is typing...</div>}
         </div>
@@ -66,12 +55,7 @@ export default function App() {
             placeholder="Ask me anything..."
             className="flex-1 p-2 border rounded"
           />
-          <button
-            onClick={sendMessage}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Send
-          </button>
+          <button onClick={sendMessage} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send</button>
         </div>
       </div>
     </div>
